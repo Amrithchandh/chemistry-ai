@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chemistry AI</title>
+<meta name="description" content="Chemistry AI: your personal chemistry study assistant.">
+<style>
+:root{
+  --bg:#F4F7FA; --card:#FFFFFF; --text:#0F1E2E; --muted:#58697B; --line:#E1E8EF;
+  --accent:#0B6E8F; --accent-soft:#E3F2F7; --on-accent:#FFFFFF;
+  --c1:#2F6FEB; --c2:#12A88A; --c3:#7C5CE0; --c4:#E8912D; --c5:#8A99AB;
+  --shadow:0 1px 2px rgba(15,30,46,.05),0 8px 24px rgba(15,30,46,.06);
+  --r:16px;
+}
+:root[data-theme=dark]{
+  --bg:#0D1B2A; --card:#13263A; --text:#E8F0F7; --muted:#9FB2C5; --line:#22394F;
+  --accent:#4FB8D8; --accent-soft:#16384B; --on-accent:#06202C;
+  --shadow:0 8px 24px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.45}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+.app{display:grid;grid-template-columns:248px 1fr;min-height:100%}
+/* sidebar */
+.side{background:var(--card);border-right:1px solid var(--line);padding:20px 14px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:20px;padding:0 8px 18px}
+.brand svg{width:34px;height:34px;color:var(--accent)}
+.nav a{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;color:var(--muted);text-decoration:none;font-weight:500}
+.nav a:hover{background:var(--bg)}
+.nav a[aria-current=page]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.promo{margin-top:auto;background:var(--accent-soft);border-radius:var(--r);padding:16px;color:var(--text)}
+.promo b{display:block;margin:8px 0 4px;font-size:16px}
+.promo span{color:var(--muted);font-size:13px}
+.me{display:flex;align-items:center;gap:10px;padding:12px 8px 0}
+.av{width:38px;height:38px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-weight:700}
+.me small{display:block;color:var(--muted);font-size:12px}
+
+/* main */
+.main{display:flex;flex-direction:column;min-width:0}
+.top{display:flex;justify-content:flex-end;align-items:center;gap:12px;padding:14px 28px;border-bottom:1px solid var(--line);background:var(--card)}
+.ibtn{border:1px solid var(--line);background:var(--card);border-radius:12px;width:40px;height:40px;display:grid;place-items:center}
+.grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(300px,1fr);gap:20px;padding:24px 28px}
+.col{display:flex;flex-direction:column;gap:20px;min-width:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:20px}
+.card h2{font-size:16px;font-weight:600;display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.card h2 svg{color:var(--accent)}
+.card h2 a{margin-left:auto;font-size:13px;color:var(--accent);font-weight:500;text-decoration:none}
+
+/* hero: the one memorable element is the live molecule */
+.hero{display:grid;grid-template-columns:200px 1fr;gap:24px;align-items:center}
+.mol{width:100%;max-width:200px;aspect-ratio:1;justify-self:center}
+.mol .bond{stroke:var(--accent);stroke-width:2.5;opacity:.45}
+.mol .atom{fill:var(--accent)}
+.mol .atom.b{fill:var(--c1)} .mol .atom.c{fill:var(--c2)} .mol .atom.d{fill:var(--c4)}
+.mol .halo{fill:none;stroke:var(--accent);stroke-width:1;opacity:.25}
+.mol g.spin{transform-origin:100px 100px;animation:spin 40s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.mol g.spin{animation:none}}
+.hero h1{font-size:30px;line-height:1.15;margin-bottom:8px}
+.hero p{color:var(--muted);max-width:44ch;margin-bottom:16px}
+.ask{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:6px 6px 6px 16px}
+.ask input{flex:1;border:0;background:transparent;font:inherit;color:var(--text);min-width:0;padding:8px 0}
+.ask input:focus{outline:none}
+.ask:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.send{background:var(--accent);color:var(--on-accent);border:0;border-radius:50%;width:40px;height:40px;display:grid;place-items:center}
+.send:disabled{opacity:.5;cursor:wait}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.chip{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:9px 14px;font-size:14px}
+.chip:hover,.qa:hover{border-color:var(--accent);background:var(--accent-soft)}
+.log{margin-top:18px;max-height:340px;overflow:auto;display:flex;flex-direction:column;gap:10px}
+.log:empty{display:none}
+.msg{padding:10px 14px;border-radius:14px;max-width:88%;white-space:pre-wrap;overflow-wrap:anywhere}
+.msg.user{align-self:flex-end;background:var(--accent);color:var(--on-accent)}
+.msg.assistant{align-self:flex-start;background:var(--bg);border:1px solid var(--line)}
+.msg.error{align-self:flex-start;background:#FDECEC;color:#8A1C1C;border:1px solid #F3C5C5}
+
+/* progress */
+.sub{display:grid;grid-template-columns:36px 150px 1fr 44px;align-items:center;gap:14px;padding:9px 0}
+.ico{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px}
+.bar{height:9px;background:var(--bg);border-radius:9px;overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;border-radius:9px}
+.pct{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+
+/* whiteboard */
+.wb{position:relative;border:1px dashed var(--line);border-radius:12px;background:var(--bg);overflow:hidden}
+.wb canvas{display:block;width:100%;height:210px;touch-action:none;cursor:crosshair}
+.wb .hint{position:absolute;inset:0;display:grid;place-content:center;text-align:center;color:var(--muted);pointer-events:none;padding:16px}
+.wb .hint b{color:var(--text);display:block;margin-bottom:4px}
+.wbtools{display:flex;gap:8px;margin-top:10px}
+.tool{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:6px 12px;font-size:13px}
+.tool[aria-pressed=true]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+
+/* quick actions */
+.qas{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.qa{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:14px;text-align:left}
+.qa svg{color:var(--accent)}
+
+/* calendar */
+.ev{display:flex;align-items:center;gap:14px;padding:10px 0;border-top:1px solid var(--line)}
+.ev:first-of-type{border-top:0}
+.date{width:46px;text-align:center;border-radius:10px;padding:5px 0;background:var(--accent-soft);color:var(--accent);line-height:1.1}
+.date b{display:block;font-size:18px}.date span{font-size:11px}
+.ev small{display:block;color:var(--muted)}
+
+.stats{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-right:auto}
+
+@media (max-width:1100px){.grid{grid-template-columns:1fr}}
+@media (max-width:820px){
+  .app{grid-template-columns:1fr}
+  .side{position:fixed;inset:auto 0 0 0;height:auto;flex-direction:row;padding:6px;z-index:5;border-right:0;border-top:1px solid var(--line);justify-content:space-around}
+  .brand,.promo,.me{display:none}
+  .nav{display:flex;width:100%;justify-content:space-around}
+  .nav a{flex-direction:column;gap:2px;font-size:11px;padding:6px 4px}
+  .nav a:nth-child(n+6){display:none}
+  .grid{padding:16px 16px 90px}
+  .top{padding:10px 16px}
+  .hero{grid-template-columns:1fr}
+  .mol{max-width:120px}
+  .sub{grid-template-columns:36px 1fr 44px}.sub .bar{grid-column:1/-1;order:5}
+}
+
+.avatar .halo{stroke-width:1.5}
+.avatar .head{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2.5}
+.avatar .mesh{fill:none;stroke:var(--accent);stroke-width:1;opacity:.28}
+.avatar .eye{fill:var(--accent);transform-box:fill-box;transform-origin:center;animation:blink 5s infinite}
+.avatar .mouth{fill:var(--accent);transform-box:fill-box;transform-origin:center;transition:transform .08s}
+@keyframes blink{0%,94%,100%{transform:scaleY(1)}97%{transform:scaleY(.1)}}
+.avatar.listening .ring{opacity:.9;stroke-width:3;animation:pulse 1.2s ease-in-out infinite}
+.avatar.talking .mouth{animation:talk .28s ease-in-out infinite alternate}
+@keyframes pulse{50%{opacity:.25}}
+@keyframes talk{from{transform:scaleY(1)}to{transform:scaleY(4.5)}}
+@media (prefers-reduced-motion:reduce){.avatar *{animation:none!important}}
+.vbar{display:flex;gap:10px;align-items:center;margin-top:10px;font-size:13px;color:var(--muted)}
+.mic{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 14px;display:flex;gap:8px;align-items:center}
+.mic[aria-pressed=true]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.mem{margin-top:6px;display:flex;flex-wrap:wrap;gap:8px}
+.mem button{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:4px 10px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6M10 3v6l-5.5 9.5A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-2.5L14 9V3"/><path d="M7.5 15h9"/></svg>
+      <span data-app-name>Chemistry AI</span>
+    </div>
+    <nav class="nav" aria-label="Main">
+      <a href="#" aria-current="page"><svg class="i" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Dashboard</a>
+      <a href="#"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>Study Planner</a>
+      <a href="#"><svg class="i" viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5z"/><path d="M9 9h6M9 13h6M9 17h4"/></svg>Notes</a>
+      <a href="#"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>AI Assistant</a>
+      <a href="#"><svg class="i" viewBox="0 0 24 24"><path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Resources</a>
+      <a href="#"><svg class="i" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>Progress</a>
+      <a href="#"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>Settings</a>
+    </nav>
+    <div class="promo">
+      <svg class="i" viewBox="0 0 24 24" style="color:var(--accent)"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.800 1-2.500A6 6 0 0 0 12 3z"/></svg>
+      <b>Learn chemistry, one reaction at a time</b>
+      <span>Your personal study companion.</span>
+    </div>
+    <div class="me"><div class="av" id="avatar">S</div><div><span id="uname">Student</span><small>Chemistry student</small></div></div>
+  </aside>
+
+  <div class="main">
+    <header class="top">
+      <div class="stats" id="stats" aria-label="System usage"></div>
+      <button class="ibtn" id="theme" aria-label="Switch between light and dark theme" title="Theme"><svg class="i" viewBox="0 0 24 24"><path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/></svg></button>
+      <button class="ibtn" aria-label="Notifications"><svg class="i" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10 20a2 2 0 0 0 4 0"/></svg></button>
+    </header>
+
+    <main class="grid">
+      <div class="col">
+        <section class="card" aria-labelledby="hello">
+          <div class="hero">
+            <svg class="mol avatar" id="avatar-svg" viewBox="0 0 200 200" role="img" aria-label="Animated assistant face">
+              <circle class="halo ring" cx="100" cy="100" r="94"/><circle class="halo" cx="100" cy="100" r="76"/>
+              <path class="head" d="M100 28c-34 0-56 24-56 58 0 24 9 44 24 58 8 8 20 14 32 14s24-6 32-14c15-14 24-34 24-58 0-34-22-58-56-58z"/>
+              <path class="mesh" d="M52 92h96M56 116h88M64 140h72M100 28v128M76 36l24 120M124 36l-24 120"/>
+              <g class="eyes"><ellipse class="eye" cx="78" cy="94" rx="9" ry="5"/><ellipse class="eye" cx="122" cy="94" rx="9" ry="5"/></g>
+              <ellipse class="mouth" cx="100" cy="132" rx="14" ry="2.5"/>
+            </svg>
+            <div>
+              <h1 id="hello">Hello, <span id="hname">Student</span></h1>
+              <p>Your chemistry study assistant is here. Ask anything, get clear answers, and learn at your own pace.</p>
+              <form class="ask" id="form">
+                <svg class="i" viewBox="0 0 24 24" style="color:var(--accent)"><path d="M12 3l1.8 4.7L18.5 9.500l-4.700 1.800L12 16l-1.800-4.700L5.500 9.500l4.700-1.800z"/></svg>
+                <input id="q" autocomplete="off" placeholder="Ask me anything about chemistry..." aria-label="Ask a question">
+                <button class="send" id="send" aria-label="Send"><svg class="i" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></button>
+              </form>
+            </div>
+          </div>
+          <div class="vbar"><button class="mic" id="mic" aria-pressed="false">Wake word: off</button><span id="vstatus">Say "Hey Wanda" after turning it on.</span><input type="file" id="file" hidden accept=".pdf,.docx,.xlsx,.xlsm,.txt,.md,.csv"></div>
+          <div class="chips" id="chips"></div>
+          <details class="mem-wrap" style="margin-top:12px"><summary style="cursor:pointer;color:var(--muted);font-size:13px">What I remember</summary><div class="mem" id="mem"></div></details>
+          <div class="log" id="log" aria-live="polite"></div>
+        </section>
+
+        <section class="card" aria-labelledby="prog">
+          <h2 id="prog"><svg class="i" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>My study progress<a href="#">View all</a></h2>
+          <div id="subjects"></div>
+        </section>
+      </div>
+
+      <div class="col">
+        <section class="card" aria-labelledby="wbt">
+          <h2 id="wbt"><svg class="i" viewBox="0 0 24 24"><path d="M12 20h9M16.500 3.500a2.100 2.100 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Lab whiteboard</h2>
+          <div class="wb"><canvas id="cv" aria-label="Drawing area"></canvas>
+            <div class="hint" id="hint"><div><b>Start writing or drawing</b>Sketch structures, mechanisms and working.</div></div></div>
+          <div class="wbtools"><button class="tool" id="pen" aria-pressed="true">Pen</button><button class="tool" id="eraser" aria-pressed="false">Eraser</button><button class="tool" id="clear">Clear</button></div>
+        </section>
+
+        <section class="card" aria-labelledby="qat">
+          <h2 id="qat"><svg class="i" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>Quick actions</h2>
+          <div class="qas" id="qas"></div>
+        </section>
+
+        <section class="card" aria-labelledby="cal">
+          <h2 id="cal"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>Study calendar<a href="#">View all</a></h2>
+          <div id="events"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (s) => s.replace(/[&<>"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const icon = (d) => `<svg class="i" viewBox="0 0 24 24"><path d="${d}"/></svg>`;
+
+/* ---- sample content: edit freely ---- */
+const SUBJECTS = [
+  {n:"Organic Chemistry", p:78, c:"var(--c1)", s:"Or"},
+  {n:"Inorganic Chemistry", p:64, c:"var(--c2)", s:"In"},
+  {n:"Physical Chemistry", p:52, c:"var(--c3)", s:"Ph"},
+  {n:"Analytical Chemistry", p:40, c:"var(--c4)", s:"An"},
+  {n:"Others", p:25, c:"var(--c5)", s:"Ot"},
+];
+const EVENTS = [
+  {d:"30", m:"Sep", t:"Stoichiometry quiz", w:"Wed, 10:00 AM"},
+  {d:"14", m:"Oct", t:"Titration lab practical", w:"Tue, 11:00 AM"},
+  {d:"25", m:"Oct", t:"Seminar presentation", w:"Sat, 02:00 PM"},
+];
+const CHIPS = [
+  ["Explain a topic","M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z","Explain this chemistry topic simply, with an example: "],
+  ["Solve a problem","M9 12l2 2 4-4M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z","Solve step by step and check the units: "],
+  ["Study plan","M3 5h18v16H3zM8 3v4M16 3v4M3 10h18","Make a 7-day study plan for this chemistry topic: "],
+  ["Summarize notes","M5 3h11l3 3v15H5zM9 9h6M9 13h6","Summarize these notes into key points and a short quiz:\n"],
+];
+const QUICK = [
+  ["Upload notes","M12 16V4M7 9l5-5 5 5M4 20h16","Summarize these notes:\n"],
+  ["Generate summary","M5 3h11l3 3v15H5zM9 9h6","Write a one-page summary of: "],
+  ["Practice quiz","M4 4h16v16H4zM8 9h8M8 13h5","Give me a 5-question practice quiz with answers hidden until I ask, on: "],
+  ["Ask AI","M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z",""],
+];
+
+/* ---- render lists ---- */
+$("#subjects").innerHTML = SUBJECTS.map(s => `
+  <div class="sub"><div class="ico" style="background:${s.c}">${s.s}</div><span>${esc(s.n)}</span>
+  <div class="bar" role="progressbar" aria-valuenow="${s.p}" aria-valuemin="0" aria-valuemax="100" aria-label="${esc(s.n)}"><i style="width:${s.p}%;background:${s.c}"></i></div>
+  <span class="pct">${s.p}%</span></div>`).join("");
+$("#events").innerHTML = EVENTS.map(e => `
+  <div class="ev"><div class="date"><b>${e.d}</b><span>${e.m}</span></div><div><b>${esc(e.t)}</b><small>${esc(e.w)}</small></div></div>`).join("");
+$("#chips").innerHTML = CHIPS.map((c,i) => `<button class="chip" data-p="${i}">${icon(c[1])}${c[0]}</button>`).join("");
+$("#qas").innerHTML = QUICK.map((c,i) => `<button class="qa" data-q="${i}">${icon(c[1])}${c[0]}</button>`).join("");
+
+function prefill(text){ const q = $("#q"); q.value = text; q.focus(); }
+$("#chips").onclick = (e) => { const b = e.target.closest("[data-p]"); if (b) prefill(CHIPS[b.dataset.p][2]); };
+$("#qas").onclick = (e) => { const b = e.target.closest("[data-q]"); if (b) prefill(QUICK[b.dataset.q][2]); };
+
+/* ---- config + live stats ---- */
+fetch("/api/config").then(r => r.json()).then(c => {
+  document.title = c.appName;
+  document.querySelectorAll("[data-app-name]").forEach(n => n.textContent = c.appName);
+  $("#uname").textContent = $("#hname").textContent = c.userName;
+  $("#avatar").textContent = c.userName.charAt(0).toUpperCase();
+}).catch(() => {});
+async function pollStats(){
+  try {
+    const s = await (await fetch("/api/stats")).json();
+    $("#stats").innerHTML = `<span>CPU ${s.cpu}%</span><span>RAM ${s.memory}%</span><span>Disk ${s.disk}%</span>`;
+  } catch {}
+}
+pollStats(); setInterval(pollStats, 5000);
+
+/* ---- chat (tool calling, spoken replies) ---- */
+const history = [];
+const avatar = $("#avatar-svg");
+function add(role, text){
+  const d = document.createElement("div");
+  d.className = "msg " + role; d.textContent = text;
+  $("#log").appendChild(d); $("#log").scrollTop = 1e9;
+}
+function speak(text){
+  if (!("speechSynthesis" in window) || !text) return;
+  speaking = true; speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text.replace(/[*_`#]/g, ""));
+  u.onstart = () => avatar.classList.add("talking");
+  u.onend = u.onerror = () => { speaking = false; avatar.classList.remove("talking"); };
+  speechSynthesis.speak(u);
+}
+async function ask(text, approve = []){
+  if (!approve.length) { history.push({role:"user", content:text}); add("user", text); }
+  $("#send").disabled = true;
+  try {
+    const r = await fetch("/api/chat", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({messages:history.slice(-20), approve})});
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || "Something went wrong.");
+    if (data.confirm) {
+      const c = data.confirm;
+      if (confirm(`Allow "${c.tool}" with ${JSON.stringify(c.args)}?`)) return ask(text, [...approve, c.tool]);
+      add("assistant", "Cancelled. I did not run it."); return;
+    }
+    history.push({role:"assistant", content:data.reply}); add("assistant", data.reply); speak(data.reply);
+  } catch (err) { add("error", err.message); }
+  finally { $("#send").disabled = false; }
+}
+$("#form").onsubmit = (e) => { e.preventDefault(); const t = $("#q").value.trim(); if (t) { $("#q").value = ""; ask(t); } };
+
+/* ---- voice: wake word "Hey Wanda" via the browser's speech recognition ---- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, wakeOn = false, awake = false, speaking = false;
+const WAKE = /hey,?\s+(wanda|wonda|wander|wonder)\b[\s,.!]*/i;
+function setStatus(t, listening){ $("#vstatus").textContent = t; avatar.classList.toggle("listening", !!listening); }
+function startVoice(){
+  if (!SR) { setStatus("Voice needs Chrome or Edge."); return; }
+  rec = new SR(); rec.continuous = true; rec.interimResults = false; rec.lang = "en-US";
+  rec.onresult = (ev) => {
+    const text = ev.results[ev.results.length-1][0].transcript.trim();
+    if (speaking || !text) return;
+    if (!awake) {
+      const m = text.match(WAKE);
+      if (!m) return;
+      const rest = text.slice(m.index + m[0].length).trim();
+      if (rest) ask(rest); else { awake = true; setStatus("Listening...", true); }
+    } else { awake = false; setStatus('Say "Hey Wanda"...', false); ask(text); }
+  };
+  rec.onend = () => { if (wakeOn) { try { rec.start(); } catch {} } };
+  rec.onerror = (e) => { if (e.error === "not-allowed") { wakeOn = false; $("#mic").setAttribute("aria-pressed","false"); setStatus("Microphone permission was blocked."); } };
+  rec.start();
+}
+$("#mic").onclick = () => {
+  wakeOn = !wakeOn; $("#mic").setAttribute("aria-pressed", wakeOn);
+  $("#mic").textContent = "Wake word: " + (wakeOn ? "on" : "off");
+  if (wakeOn) { startVoice(); setStatus('Say "Hey Wanda"...', false); }
+  else { rec && rec.stop(); awake = false; setStatus('Say "Hey Wanda" after turning it on.', false); }
+};
+
+/* ---- documents ---- */
+$("#file").onchange = async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  const fd = new FormData(); fd.append("file", f);
+  const r = await fetch("/api/upload", {method:"POST", body:fd}); const d = await r.json();
+  if (!r.ok) { add("error", d.detail); return; }
+  ask(`Read the file ${d.filename} and give me a short summary.`);
+  e.target.value = "";
+};
+$("#qas").addEventListener("click", (e) => { if (e.target.closest("[data-q='0']")) $("#file").click(); });
+
+/* ---- reminders + memory ---- */
+setInterval(async () => {
+  try { for (const t of await (await fetch("/api/reminders/due")).json()) { add("assistant", "Reminder: " + t); speak("Reminder: " + t); } } catch {}
+}, 10000);
+async function loadMem(){
+  try {
+    const m = await (await fetch("/api/memory")).json();
+    $("#mem").innerHTML = m.length ? m.map(x => `<button data-id="${x.id}" title="Forget this">${esc(x.fact)} ×</button>`).join("") : "<span style='color:var(--muted);font-size:12px'>Nothing yet. Say \"remember that ...\".</span>";
+  } catch {}
+}
+$("#mem").onclick = async (e) => { const b = e.target.closest("[data-id]"); if (b) { await fetch("/api/memory/" + b.dataset.id, {method:"DELETE"}); loadMem(); } };
+loadMem(); setInterval(loadMem, 15000);
+
+/* ---- whiteboard ---- */
+const cv = $("#cv"), ctx = cv.getContext("2d");
+let drawing = false, erase = false;
+function fit(){
+  const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  const keep = cv.toDataURL(); cv.width = r.width*dpr; cv.height = r.height*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0); ctx.lineCap = "round"; ctx.lineJoin = "round";
+  const img = new Image(); img.onload = () => ctx.drawImage(img,0,0,r.width,r.height); img.src = keep;
+}
+fit(); addEventListener("resize", fit);
+const pos = (e) => { const r = cv.getBoundingClientRect(); return [e.clientX-r.left, e.clientY-r.top]; };
+cv.onpointerdown = (e) => { drawing = true; cv.setPointerCapture(e.pointerId); $("#hint").style.display = "none"; ctx.beginPath(); ctx.moveTo(...pos(e)); };
+cv.onpointermove = (e) => {
+  if (!drawing) return;
+  ctx.globalCompositeOperation = erase ? "destination-out" : "source-over";
+  ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--text");
+  ctx.lineWidth = erase ? 18 : 2.5; ctx.lineTo(...pos(e)); ctx.stroke();
+};
+cv.onpointerup = () => drawing = false;
+const mode = (er) => { erase = er; $("#pen").setAttribute("aria-pressed", !er); $("#eraser").setAttribute("aria-pressed", er); };
+$("#pen").onclick = () => mode(false); $("#eraser").onclick = () => mode(true);
+$("#clear").onclick = () => { ctx.clearRect(0,0,cv.width,cv.height); $("#hint").style.display = ""; };
+
+/* ---- theme ---- */
+const root = document.documentElement;
+try { root.dataset.theme = localStorage.getItem("theme") || "light"; } catch { root.dataset.theme = "light"; }
+$("#theme").onclick = () => {
+  root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+  try { localStorage.setItem("theme", root.dataset.theme); } catch {}
+};
+</script>
+</body>
+</html>
